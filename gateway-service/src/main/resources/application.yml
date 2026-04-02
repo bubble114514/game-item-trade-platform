@@ -6,14 +6,14 @@ spring:
     name: gateway-service
   data:
     redis:
-      host: ${REDIS_HOST:127.0.0.1}
-      port: ${REDIS_PORT:6379}
+      host: 192.168.201.100
+      port: 6379
       database: 0
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
-        namespace: ${NACOS_NAMESPACE:}
+        server-addr: 192.168.201.100:8848
+        namespace: 
     gateway:
       globalcors:
         cors-configurations:
@@ -52,10 +52,6 @@ sa-token:
   token-prefix: Bearer
   timeout: 2592000
   is-concurrent: true
-  alone-redis:
-    host: ${REDIS_HOST:127.0.0.1}
-    port: ${REDIS_PORT:6379}
-    database: 0
 
 management:
   endpoints:
