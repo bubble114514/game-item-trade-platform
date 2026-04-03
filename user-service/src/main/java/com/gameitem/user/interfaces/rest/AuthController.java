@@ -1,15 +1,12 @@
 package com.gameitem.user.interfaces.rest;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.gameitem.common.api.ApiResult;
 import com.gameitem.common.exception.BizException;
 import com.gameitem.user.application.UserAuthService;
+import com.gameitem.user.domain.model.UserAccount;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -23,19 +20,38 @@ public class AuthController {
         this.userAuthService = userAuthService;
     }
 
-    public record RegisterReq(String username, String password, String nickname) {}
+    public record RegisterReq(String username, String password, String nickname, String role) {}
 
     public record LoginReq(String username, String password) {}
 
     @PostMapping("/register")
     public ApiResult<Void> register(@RequestBody RegisterReq req) {
-        userAuthService.register(req.username(), req.password(), req.nickname());
+        userAuthService.register(req.username(), req.password(), req.nickname(), req.role());
         return ApiResult.ok(null);
     }
 
     @PostMapping("/login")
     public ApiResult<Map<String, Object>> login(@RequestBody LoginReq req) {
         return ApiResult.ok(userAuthService.login(req.username(), req.password()));
+    }
+    
+    @PostMapping("/logout")
+    public ApiResult<Void> logout() {
+        StpUtil.logout();
+        return ApiResult.ok(null);
+    }
+    
+    @GetMapping("/current")
+    public ApiResult<Map<String, Object>> getCurrentUser() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        UserAccount user = userAuthService.getCurrentUser(userId);
+        Map<String, Object> body = Map.of(
+            "userId", user.getId(),
+            "username", user.getUsername(),
+            "nickname", user.getNickname(),
+            "role", user.getRole().name()
+        );
+        return ApiResult.ok(body);
     }
 
     @ExceptionHandler(BizException.class)

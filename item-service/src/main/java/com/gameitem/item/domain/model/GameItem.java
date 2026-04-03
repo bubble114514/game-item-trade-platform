@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Entity
 @Table(name = "game_item")
@@ -20,17 +21,23 @@ public class GameItem {
     @Column(nullable = false, length = 128)
     private String name;
 
-    @Column(length = 32)
+    @Column(nullable = false, length = 64)
     private String game;
 
     @Column(length = 32)
     private String category;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "reference_price", precision = 12, scale = 2)
     private BigDecimal referencePrice;
 
     @Column(length = 512)
     private String description;
+
+    @Column(name = "icon_url", length = 256)
+    private String iconUrl;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt = Instant.now();
 
     public Long getId() {
         return id;
@@ -78,5 +85,21 @@ public class GameItem {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getIconUrl() {
+        return iconUrl;
+    }
+
+    public void setIconUrl(String iconUrl) {
+        this.iconUrl = iconUrl;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }

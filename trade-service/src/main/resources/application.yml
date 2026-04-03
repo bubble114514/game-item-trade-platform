@@ -21,6 +21,11 @@ spring:
       discovery:
         server-addr: 192.168.201.100:8848
         namespace: 
+    sentinel:
+      transport:
+        dashboard: 192.168.201.100:8080
+      log:
+        dir: logs/sentinel
 
 rocketmq:
   name-server: 192.168.201.100:9876

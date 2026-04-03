@@ -4,13 +4,15 @@ import com.gameitem.common.api.ApiResult;
 import com.gameitem.common.exception.BizException;
 import com.gameitem.item.application.ItemQueryService;
 import com.gameitem.item.domain.model.GameItem;
+import com.gameitem.item.domain.model.ItemListing;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/item")
@@ -22,14 +24,90 @@ public class ItemController {
         this.itemQueryService = itemQueryService;
     }
 
+    // 道具基础接口
     @GetMapping("/{id}")
     public ApiResult<GameItem> get(@PathVariable Long id) {
         return ApiResult.ok(itemQueryService.getById(id));
     }
+    
+    @GetMapping
+    public ApiResult<List<GameItem>> listAll() {
+        return ApiResult.ok(itemQueryService.listAll());
+    }
+    
+    @GetMapping("/page")
+    public ApiResult<Page<GameItem>> listByPage(@RequestParam(defaultValue = "0") int page,
+                                                 @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ApiResult.ok(itemQueryService.listByPage(pageable));
+    }
+    
+    @PostMapping
+    public ApiResult<GameItem> create(@RequestBody CreateItemReq req) {
+        GameItem item = itemQueryService.createItem(
+            req.name(), req.game(), req.category(), 
+            req.referencePrice(), req.description(), req.iconUrl()
+        );
+        return ApiResult.ok(item);
+    }
+    
+    // 挂牌接口
+    @PostMapping("/listings")
+    public ApiResult<ItemListing> createListing(@RequestBody CreateListingReq req) {
+        ItemListing listing = itemQueryService.createListing(
+            req.itemId(), req.sellerId(), req.price(), 
+            req.quantity(), req.description()
+        );
+        return ApiResult.ok(listing);
+    }
+    
+    @GetMapping("/listings/{id}")
+    public ApiResult<ItemListing> getListing(@PathVariable Long id) {
+        return ApiResult.ok(itemQueryService.getListingById(id));
+    }
+    
+    @GetMapping("/listings")
+    public ApiResult<Page<ItemListing>> listActiveListings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ApiResult.ok(itemQueryService.listActiveListings(pageable));
+    }
+    
+    @GetMapping("/{itemId}/listings")
+    public ApiResult<Page<ItemListing>> listListingsByItem(
+            @PathVariable Long itemId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ApiResult.ok(itemQueryService.listListingsByItem(itemId, pageable));
+    }
+    
+    @GetMapping("/seller/{sellerId}/listings")
+    public ApiResult<Page<ItemListing>> listListingsBySeller(
+            @PathVariable Long sellerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ApiResult.ok(itemQueryService.listListingsBySeller(sellerId, pageable));
+    }
+    
+    @PostMapping("/listings/{listingId}/cancel")
+    public ApiResult<Void> cancelListing(@PathVariable Long listingId, @RequestParam Long sellerId) {
+        itemQueryService.cancelListing(listingId, sellerId);
+        return ApiResult.ok(null);
+    }
 
     @ExceptionHandler(BizException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResult<Void> handleBiz(BizException e) {
         return ApiResult.fail(e.getCode(), e.getMessage());
     }
+    
+    // 请求记录
+    public record CreateItemReq(String name, String game, String category, 
+                                BigDecimal referencePrice, String description, String iconUrl) {}
+    
+    public record CreateListingReq(Long itemId, Long sellerId, BigDecimal price, 
+                                   Integer quantity, String description) {}
 }

@@ -46,12 +46,18 @@ spring:
           uri: lb://message-service
           predicates:
             - Path=/api/message/**
+    sentinel:
+      transport:
+        dashboard: 192.168.201.100:8080
+      log:
+        dir: logs/sentinel
 
 sa-token:
   token-name: Authorization
   token-prefix: Bearer
   timeout: 2592000
   is-concurrent: true
+  is-log: false
 
 management:
   endpoints:
