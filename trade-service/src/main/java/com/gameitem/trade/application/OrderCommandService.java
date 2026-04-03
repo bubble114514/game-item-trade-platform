@@ -1,6 +1,5 @@
 package com.gameitem.trade.application;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gameitem.common.exception.BizException;
 import com.gameitem.trade.domain.model.TradeOrder;
@@ -274,20 +273,27 @@ public class OrderCommandService {
                 order.getStatus().name(),
                 order.getTradeMode().name()
             ));
-            rocketMQTemplate.asyncSend(TOPIC_ORDER + ":" + tag,
-                    MessageBuilder.withPayload(json.getBytes()).build(), new org.apache.rocketmq.client.producer.SendCallback() {
-                        @Override
-                        public void onSuccess(org.apache.rocketmq.client.producer.SendResult sendResult) {
-                            System.out.println("订单事件消息发送成功: " + sendResult);
-                        }
+            try {
+                rocketMQTemplate.asyncSend(TOPIC_ORDER + ":" + tag,
+                        MessageBuilder.withPayload(json.getBytes()).build(), new org.apache.rocketmq.client.producer.SendCallback() {
+                            @Override
+                            public void onSuccess(org.apache.rocketmq.client.producer.SendResult sendResult) {
+                                System.out.println("订单事件消息发送成功: " + sendResult);
+                            }
 
-                        @Override
-                        public void onException(java.lang.Throwable e) {
-                            System.err.println("订单事件消息发送失败: " + e.getMessage());
-                        }
-                    });
+                            @Override
+                            public void onException(java.lang.Throwable e) {
+                                System.err.println("订单事件消息发送失败: " + e.getMessage());
+                                // 记录日志但不影响主业务
+                            }
+                        });
+            } catch (Exception e) {
+                System.err.println("RocketMQ发送异常: " + e.getMessage());
+                // 记录日志但不影响主业务
+            }
         } catch (Exception e) {
             System.err.println("发送订单事件消息失败: " + e.getMessage());
+            // 记录日志但不影响主业务
         }
     }
 
