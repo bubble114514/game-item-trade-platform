@@ -1,3 +1,5 @@
+import { ElMessage } from 'element-plus'
+
 function getToken() {
   return localStorage.getItem('token')
 }
@@ -18,24 +20,41 @@ async function request(path, options = {}) {
     headers['Content-Type'] = 'application/json'
   }
 
-  const resp = await fetch('/api' + path, {
-    ...options,
-    headers
-  })
+  try {
+    const resp = await fetch('/api' + path, {
+      ...options,
+      headers
+    })
 
-  const json = await resp.json().catch(() => ({}))
+    const json = await resp.json().catch(() => ({}))
 
-  if (!resp.ok) {
-    const msg = json?.message || ('请求失败: ' + resp.status)
-    throw new Error(msg)
+    if (!resp.ok) {
+      if (resp.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('userId')
+        localStorage.removeItem('nickname')
+        localStorage.removeItem('role')
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          window.location.href = '/login'
+        }
+      }
+      const msg = json?.message || ('请求失败: ' + resp.status)
+      ElMessage.error(msg)
+      throw new Error(msg)
+    }
+
+    if (json && typeof json.code === 'number' && json.code !== 0) {
+      ElMessage.error(json.message || '业务失败')
+      throw new Error(json.message || '业务失败')
+    }
+
+    return json
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      ElMessage.error('网络错误，请检查后端服务是否启动')
+    }
+    throw error
   }
-
-  if (json && typeof json.code === 'number' && json.code !== 0) {
-    throw new Error(json.message || '业务失败')
-  }
-
-  return json
 }
 
 export { request }
-

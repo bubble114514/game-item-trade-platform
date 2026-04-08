@@ -32,14 +32,14 @@ services:
       - "9848:9848"
 
   rocketmq-namesrv:
-    image: apache/rocketmq:5.2.0
+    image: apache/rocketmq:4.9.4
     container_name: gitp-rmq-namesrv
     command: sh mqnamesrv
     ports:
       - "9876:9876"
 
   rocketmq-broker:
-    image: apache/rocketmq:5.2.0
+    image: apache/rocketmq:4.9.4
     container_name: gitp-rmq-broker
     depends_on:
       - rocketmq-namesrv
