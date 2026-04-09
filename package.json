@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "dev": "npm run dev --prefix frontend"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "element-plus": "^2.13.6",
+    "pinia": "^3.0.4"
+  },
+  "devDependencies": {
+    "unplugin-auto-import": "^21.0.0",
+    "unplugin-vue-components": "^32.0.0"
+  }
+}
