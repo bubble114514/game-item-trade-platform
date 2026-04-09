@@ -12,18 +12,6 @@
           <span class="category-icon">🎮</span>
           <span class="category-name">全部游戏</span>
         </el-menu-item>
-        <el-menu-item index="/listings?category=游戏币">
-          <span class="category-icon">💰</span>
-          <span class="category-name">游戏币</span>
-        </el-menu-item>
-        <el-menu-item index="/listings?category=装备">
-          <span class="category-icon">⚔️</span>
-          <span class="category-name">装备</span>
-        </el-menu-item>
-        <el-menu-item index="/listings?category=账号">
-          <span class="category-icon">👤</span>
-          <span class="category-name">账号</span>
-        </el-menu-item>
         <el-menu-item index="/listings">
           <span class="category-icon">🏷️</span>
           <span class="category-name">挂牌列表</span>

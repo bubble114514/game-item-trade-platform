@@ -8,7 +8,7 @@
     <el-card class="filter-card" shadow="never">
       <el-form :inline="true" :model="filters" class="filter-form">
         <el-form-item label="游戏">
-          <el-select v-model="filters.game" placeholder="全部游戏" clearable>
+          <el-select v-model="gameValue" placeholder="全部游戏" clearable value-key="value">
             <el-option label="热血传奇" value="热血传奇" />
             <el-option label="魔兽世界" value="魔兽世界" />
             <el-option label="英雄联盟" value="英雄联盟" />
@@ -17,7 +17,7 @@
         </el-form-item>
         
         <el-form-item label="分类">
-          <el-select v-model="filters.category" placeholder="全部分类" clearable>
+          <el-select v-model="categoryValue" placeholder="全部分类" clearable value-key="value">
             <el-option label="武器" value="武器" />
             <el-option label="防具" value="防具" />
             <el-option label="消耗品" value="消耗品" />
@@ -90,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { request } from '../api/client.js'
 import { Search, Refresh, Monitor, User } from '@element-plus/icons-vue'
@@ -103,10 +103,16 @@ const isLoading = ref(false)
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(12)
+const isUpdatingFromRoute = ref(false)
 
+// 中间变量，用于绑定el-select组件
+const gameValue = ref(route.query.game ? decodeURIComponent(route.query.game) : '')
+const categoryValue = ref(route.query.category ? decodeURIComponent(route.query.category) : '')
+
+// 过滤条件，用于前端过滤
 const filters = ref({
-  game: route.query.game || '',
-  category: '',
+  game: gameValue.value,
+  category: categoryValue.value,
   minPrice: undefined,
   maxPrice: undefined
 })
@@ -174,8 +180,15 @@ async function fetchListings() {
 }
 
 function applyFilters() {
-  // 如果后端支持过滤，这里应该重新调用 fetchListings 并带上参数
-  // 目前使用前端过滤
+  // 更新路由参数，保持过滤条件
+  router.replace({
+    path: '/listings',
+    query: {
+      game: filters.value.game || undefined,
+      category: filters.value.category || undefined
+    }
+  })
+  // 前端过滤，不需要重新获取数据
 }
 
 function resetFilters() {
@@ -185,6 +198,12 @@ function resetFilters() {
     minPrice: undefined,
     maxPrice: undefined
   }
+  // 重置路由参数
+  router.replace({
+    path: '/listings',
+    query: {}
+  })
+  // 前端过滤，不需要重新获取数据
 }
 
 function handleSizeChange(val) {
@@ -203,7 +222,73 @@ function buyListing(listing) {
   }
 }
 
+// 监听路由参数变化
+watch(() => route.query, (newQuery) => {
+  console.log('Route query changed:', newQuery)
+  isUpdatingFromRoute.value = true
+  try {
+    // 先清空值，再设置新值，触发el-select的更新
+    gameValue.value = ''
+    categoryValue.value = ''
+    // 使用nextTick确保DOM更新后再设置新值
+    nextTick(() => {
+      gameValue.value = newQuery.game ? decodeURIComponent(newQuery.game) : ''
+      categoryValue.value = newQuery.category ? decodeURIComponent(newQuery.category) : ''
+      // 更新过滤条件
+      filters.value.game = gameValue.value
+      filters.value.category = categoryValue.value
+      console.log('Game value updated:', gameValue.value)
+      console.log('Category value updated:', categoryValue.value)
+      console.log('Filters updated:', filters.value)
+    })
+  } finally {
+    isUpdatingFromRoute.value = false
+  }
+}, { deep: true })
+
+// 监听gameValue变化，自动更新过滤条件和路由参数
+watch(gameValue, (newGame) => {
+  // 更新过滤条件
+  filters.value.game = newGame
+  
+  if (!isUpdatingFromRoute.value) {
+    router.replace({
+      path: '/listings',
+      query: {
+        game: newGame || undefined,
+        category: categoryValue.value || undefined
+      }
+    })
+  }
+})
+
+// 监听categoryValue变化，自动更新过滤条件和路由参数
+watch(categoryValue, (newCategory) => {
+  // 更新过滤条件
+  filters.value.category = newCategory
+  
+  if (!isUpdatingFromRoute.value) {
+    router.replace({
+      path: '/listings',
+      query: {
+        game: gameValue.value || undefined,
+        category: newCategory || undefined
+      }
+    })
+  }
+})
+
 onMounted(() => {
+  // 手动更新gameValue和categoryValue，确保从路由参数中获取正确的值
+  console.log('Initial route query:', route.query)
+  gameValue.value = route.query.game ? decodeURIComponent(route.query.game) : ''
+  categoryValue.value = route.query.category ? decodeURIComponent(route.query.category) : ''
+  // 更新过滤条件
+  filters.value.game = gameValue.value
+  filters.value.category = categoryValue.value
+  console.log('Initial gameValue:', gameValue.value)
+  console.log('Initial categoryValue:', categoryValue.value)
+  console.log('Initial filters:', filters.value)
   fetchListings()
 })
 </script>
@@ -216,6 +301,31 @@ onMounted(() => {
 .page-header {
   text-align: center;
   margin-bottom: 30px;
+}
+
+.custom-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.custom-select:focus {
+  outline: none;
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+/* 确保el-select组件有足够的宽度 */
+:deep(.el-select) {
+  min-width: 150px;
+}
+
+/* 确保el-select组件的输入框有足够的宽度 */
+:deep(.el-select__input) {
+  min-width: 100px;
 }
 
 .page-header h1 {
