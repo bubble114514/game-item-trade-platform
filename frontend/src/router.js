@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Use lazy loading for all routes to improve performance
-const Home = () => import('./views/Home.vue')
-const Login = () => import('./views/Login.vue')
-const Register = () => import('./views/Register.vue')
-const Orders = () => import('./views/Orders.vue')
-const Category = () => import('./views/Category.vue')
-const ItemDetails = () => import('./views/ItemDetails.vue')
-const Listings = () => import('./views/Listings.vue')
+// Direct import instead of lazy loading to avoid dynamic import issues
+import Home from './views/Home.vue'
+import Login from './views/Login.vue'
+import Register from './views/Register.vue'
+import Orders from './views/Orders.vue'
+import Category from './views/Category.vue'
+import ItemDetails from './views/ItemDetails.vue'
+import Listings from './views/Listings.vue'
 
 const routes = [
   { path: '/', component: Home, meta: { requiresAuth: true } },

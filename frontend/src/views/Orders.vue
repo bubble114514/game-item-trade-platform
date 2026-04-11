@@ -220,8 +220,10 @@ async function fetchOrders() {
   
   isLoading.value = true
   try {
-    const response = await request(`/trade/orders?userId=${userStore.userId}`, { method: 'GET' })
-    orders.value = response.data || []
+    // 调用后端的买家订单查询接口
+    const response = await request(`/trade/orders/buyer/${userStore.userId}`, { method: 'GET' })
+    // 后端返回的是分页数据，需要从content字段获取订单列表
+    orders.value = response.data?.content || []
   } catch (error) {
     console.error('获取订单失败:', error)
   } finally {

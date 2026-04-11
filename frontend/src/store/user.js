@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { request } from '../api/client.js'
 
 export const useUserStore = defineStore('user', () => {
@@ -7,6 +7,8 @@ export const useUserStore = defineStore('user', () => {
   const userId = ref(localStorage.getItem('userId') || '')
   const nickname = ref(localStorage.getItem('nickname') || '')
   const role = ref(localStorage.getItem('role') || '')
+
+  const isLoggedIn = computed(() => !!token.value)
 
   const setToken = (newToken) => {
     token.value = newToken
@@ -76,6 +78,7 @@ export const useUserStore = defineStore('user', () => {
     userId,
     nickname,
     role,
+    isLoggedIn,
     setToken,
     setUserInfo,
     clearUser,
