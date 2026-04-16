@@ -6,11 +6,15 @@ spring:
     name: search-service
   elasticsearch:
     uris: http://192.168.201.100:9200
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true
   cloud:
     nacos:
       discovery:
         server-addr: 192.168.201.100:8848
-        namespace: 
+        namespace:
 
 management:
   endpoints:

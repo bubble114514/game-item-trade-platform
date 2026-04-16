@@ -8,6 +8,9 @@ import Orders from './views/Orders.vue'
 import Category from './views/Category.vue'
 import ItemDetails from './views/ItemDetails.vue'
 import Listings from './views/Listings.vue'
+import SellItem from './views/SellItem.vue'
+import Search from './views/Search.vue'
+import UserCenter from './views/UserCenter.vue'
 
 const routes = [
   { path: '/', component: Home, meta: { requiresAuth: true } },
@@ -15,7 +18,10 @@ const routes = [
   { path: '/login', component: Login },
   { path: '/register', component: Register },
   { path: '/orders', component: Orders, meta: { requiresAuth: true } },
+  { path: '/user', component: UserCenter, meta: { requiresAuth: true } },
   { path: '/listings', component: Listings, meta: { requiresAuth: true } },
+  { path: '/sell', component: SellItem, meta: { requiresAuth: true } },
+  { path: '/search', component: Search, meta: { requiresAuth: true } },
   // Route for specific categories like /category/equipment
   { path: '/category/:type', component: Category, props: true },
   // Redirect for the base /category path to a default view or the main page

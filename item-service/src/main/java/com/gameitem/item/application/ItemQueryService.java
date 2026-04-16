@@ -38,7 +38,7 @@ public class ItemQueryService {
     }
     
     @Transactional
-    public GameItem createItem(String name, String game, String category, 
+    public GameItem createItem(String name, String game, String category,
                                BigDecimal referencePrice, String description, String iconUrl) {
         GameItem item = new GameItem();
         item.setName(name);
@@ -48,6 +48,49 @@ public class ItemQueryService {
         item.setDescription(description);
         item.setIconUrl(iconUrl);
         return gameItemRepository.save(item);
+    }
+
+    @Transactional
+    public GameItem updateItem(Long id, String name, String game, String category,
+                               BigDecimal referencePrice, String description, String iconUrl) {
+        GameItem item = getById(id);
+        if (name != null && !name.isBlank()) {
+            item.setName(name);
+        }
+        if (game != null && !game.isBlank()) {
+            item.setGame(game);
+        }
+        if (category != null) {
+            item.setCategory(category);
+        }
+        if (referencePrice != null) {
+            item.setReferencePrice(referencePrice);
+        }
+        if (description != null) {
+            item.setDescription(description);
+        }
+        if (iconUrl != null) {
+            item.setIconUrl(iconUrl);
+        }
+        return gameItemRepository.save(item);
+    }
+
+    @Transactional
+    public ItemListing updateListing(Long id, BigDecimal price, Integer quantity, String description) {
+        ItemListing listing = getListingById(id);
+        if (listing.getStatus() != ItemListing.ListingStatus.ACTIVE) {
+            throw new BizException(40001, "只能编辑活跃状态的挂牌");
+        }
+        if (price != null) {
+            listing.setPrice(price);
+        }
+        if (quantity != null && quantity > 0) {
+            listing.setQuantity(quantity);
+        }
+        if (description != null) {
+            listing.setDescription(description);
+        }
+        return itemListingRepository.save(listing);
     }
     
     // 挂牌相关
@@ -72,8 +115,45 @@ public class ItemQueryService {
                 .orElseThrow(() -> new BizException(40402, "挂牌不存在"));
     }
     
-    public Page<ItemListing> listActiveListings(Pageable pageable) {
-        return itemListingRepository.findByStatus(ItemListing.ListingStatus.ACTIVE, pageable);
+    public Page<ItemListing> listActiveListings(Pageable pageable, String game, String category, BigDecimal minPrice, BigDecimal maxPrice) {
+        boolean hasGame = game != null && !game.isBlank();
+        boolean hasCategory = category != null && !category.isBlank();
+        boolean hasMinPrice = minPrice != null;
+        boolean hasMaxPrice = maxPrice != null;
+
+        if (hasGame && hasCategory && hasMinPrice && hasMaxPrice) {
+            return itemListingRepository.findByGameAndCategoryAndPriceRange(game, category, minPrice, maxPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasGame && hasCategory && hasMinPrice) {
+            return itemListingRepository.findByGameAndCategoryAndPriceGreaterThanEqual(game, category, minPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasGame && hasCategory && hasMaxPrice) {
+            return itemListingRepository.findByGameAndCategoryAndPriceLessThanEqual(game, category, maxPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasGame && hasMinPrice && hasMaxPrice) {
+            return itemListingRepository.findByGameAndPriceRange(game, minPrice, maxPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasGame && hasMinPrice) {
+            return itemListingRepository.findByGameAndPriceGreaterThanEqual(game, minPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasGame && hasMaxPrice) {
+            return itemListingRepository.findByGameAndPriceLessThanEqual(game, maxPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasCategory && hasMinPrice && hasMaxPrice) {
+            return itemListingRepository.findByCategoryAndPriceRange(category, minPrice, maxPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasCategory && hasMinPrice) {
+            return itemListingRepository.findByCategoryAndPriceGreaterThanEqual(category, minPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasCategory && hasMaxPrice) {
+            return itemListingRepository.findByCategoryAndPriceLessThanEqual(category, maxPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasMinPrice && hasMaxPrice) {
+            return itemListingRepository.findByPriceRange(minPrice, maxPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasMinPrice) {
+            return itemListingRepository.findByPriceGreaterThanEqual(minPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasMaxPrice) {
+            return itemListingRepository.findByPriceLessThanEqual(maxPrice, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasGame && hasCategory) {
+            return itemListingRepository.findByGameAndCategoryAndStatus(game, category, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasGame) {
+            return itemListingRepository.findByGameAndStatus(game, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else if (hasCategory) {
+            return itemListingRepository.findByCategoryAndStatus(category, ItemListing.ListingStatus.ACTIVE, pageable);
+        } else {
+            return itemListingRepository.findByStatus(ItemListing.ListingStatus.ACTIVE, pageable);
+        }
     }
     
     public Page<ItemListing> listListingsByItem(Long itemId, Pageable pageable) {

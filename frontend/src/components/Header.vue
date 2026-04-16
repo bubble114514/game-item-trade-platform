@@ -1,6 +1,5 @@
 <template>
   <header class="header">
-    <!-- 顶部信息栏 -->
     <div class="top-bar">
       <div class="top-bar-content">
         <div class="top-links">
@@ -20,18 +19,18 @@
         </div>
       </div>
     </div>
-    
-    <!-- 主导航栏 -->
+
     <div class="main-nav">
       <div class="main-nav-content">
-        <!-- Logo -->
         <div class="logo">
           <router-link to="/" class="logo-link">
+            <div class="logo-icon">
+              <el-icon :size="32" color="#fff"><Shop /></el-icon>
+            </div>
             <h1>道具商城</h1>
           </router-link>
         </div>
-        
-        <!-- 搜索框 -->
+
         <div class="search-container">
           <el-input
             v-model="searchQuery"
@@ -44,28 +43,31 @@
             </template>
           </el-input>
         </div>
-        
-        <!-- 功能图标 -->
+
         <div class="nav-icons">
           <div class="icon-item">
+            <router-link to="/sell" class="icon-link">
+              <div class="icon-circle">
+                <el-icon :size="22"><Upload /></el-icon>
+              </div>
+              <span class="icon-text">上架</span>
+            </router-link>
+          </div>
+          <div class="icon-item">
             <router-link to="/orders" class="icon-link">
-              <el-icon :size="20"><List /></el-icon>
+              <div class="icon-circle">
+                <el-icon :size="22"><List /></el-icon>
+              </div>
               <span class="icon-text">订单</span>
             </router-link>
           </div>
           <div class="icon-item">
-            <a href="#" class="icon-link">
-              <el-icon :size="20"><Star /></el-icon>
-              <span class="icon-text">收藏</span>
-            </a>
-          </div>
-          <div class="icon-item">
-            <a href="#" class="icon-link">
-              <el-badge :value="0" class="cart-badge">
-                <el-icon :size="20"><ShoppingCart /></el-icon>
-              </el-badge>
-              <span class="icon-text">购物车</span>
-            </a>
+            <router-link to="/user" class="icon-link">
+              <div class="icon-circle">
+                <el-icon :size="22"><User /></el-icon>
+              </div>
+              <span class="icon-text">我的</span>
+            </router-link>
           </div>
         </div>
       </div>
@@ -77,7 +79,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../store/user'
-import { Search, List, Star, ShoppingCart } from '@element-plus/icons-vue'
+import { Search, List, Star, ShoppingCart, Upload, Shop, User } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
@@ -92,8 +94,7 @@ const handleLogout = async () => {
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
-    // 假设有一个搜索结果页，或者在首页处理
-    router.push({ path: '/', query: { q: searchQuery.value.trim() } })
+    router.push({ path: '/search', query: { q: searchQuery.value.trim() } })
   }
 }
 </script>
@@ -101,17 +102,18 @@ const handleSearch = () => {
 <style scoped>
 .header {
   background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
-/* 顶部信息栏 */
 .top-bar {
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   padding: 8px 0;
 }
 
 .top-bar-content {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 24px;
   display: flex;
@@ -124,6 +126,15 @@ const handleSearch = () => {
   gap: 20px;
 }
 
+.top-links :deep(.el-link__inner) {
+  color: rgba(255,255,255,0.7);
+  font-size: 13px;
+}
+
+.top-links :deep(.el-link__inner:hover) {
+  color: #fff;
+}
+
 .top-user {
   display: flex;
   align-items: center;
@@ -131,28 +142,23 @@ const handleSearch = () => {
 }
 
 .welcome {
-  font-size: 14px;
-  color: #495057;
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
 }
 
-/* 主导航栏 */
 .main-nav {
   background: white;
-  border-bottom: 1px solid #e9ecef;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .main-nav-content {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 80px;
+  height: 72px;
 }
 
 .logo {
@@ -164,6 +170,7 @@ const handleSearch = () => {
   text-decoration: none;
   display: flex;
   align-items: center;
+  gap: 12px;
   transition: transform 0.3s ease;
 }
 
@@ -171,39 +178,61 @@ const handleSearch = () => {
   transform: translateY(-2px);
 }
 
-.logo h1 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #409EFF;
-  background: linear-gradient(135deg, #409EFF, #79bbff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.logo-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-/* 搜索框 */
+.logo h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
 .search-container {
   flex: 1;
-  max-width: 600px;
+  max-width: 560px;
   margin: 0 40px;
 }
 
+.search-input :deep(.el-input__wrapper) {
+  border-radius: 24px;
+  padding: 4px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e8e8f0;
+}
+
+.search-input :deep(.el-input__wrapper:hover) {
+  border-color: #667eea;
+}
+
+.search-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #667eea;
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.15);
+}
+
 .search-input :deep(.el-input-group__append) {
-  background-color: #409EFF;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-color: #409EFF;
+  border: none;
+  border-radius: 0 24px 24px 0;
+  padding: 0 20px;
 }
 
 .search-input :deep(.el-input-group__append:hover) {
-  background-color: #79bbff;
-  border-color: #79bbff;
+  background: linear-gradient(135deg, #5a71d2 0%, #6a4190 100%);
 }
 
-/* 功能图标 */
 .nav-icons {
   display: flex;
-  gap: 24px;
+  gap: 8px;
   align-items: center;
 }
 
@@ -218,14 +247,30 @@ const handleSearch = () => {
   text-decoration: none;
   color: #606266;
   transition: all 0.3s ease;
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border-radius: 12px;
 }
 
 .icon-link:hover {
-  color: #409EFF;
-  background: #ecf5ff;
-  transform: translateY(-2px);
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.08);
+}
+
+.icon-circle {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.icon-link:hover .icon-circle {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transform: scale(1.1);
 }
 
 .icon-text {
@@ -234,16 +279,11 @@ const handleSearch = () => {
   margin-top: 4px;
 }
 
-.cart-badge {
-  margin-bottom: 4px;
-}
-
-/* 响应式设计 */
 @media (max-width: 1200px) {
   .main-nav-content {
     padding: 0 16px;
   }
-  
+
   .search-container {
     margin: 0 20px;
   }
@@ -255,24 +295,24 @@ const handleSearch = () => {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .top-links {
     gap: 16px;
   }
-  
+
   .main-nav-content {
     height: auto;
     padding: 16px;
     flex-direction: column;
     gap: 16px;
   }
-  
+
   .search-container {
     width: 100%;
     max-width: none;
     margin: 0;
   }
-  
+
   .nav-icons {
     width: 100%;
     justify-content: space-around;
@@ -281,11 +321,15 @@ const handleSearch = () => {
 
 @media (max-width: 540px) {
   .logo h1 {
-    font-size: 24px;
+    font-size: 20px;
   }
-  
+
   .icon-text {
     font-size: 11px;
+  }
+
+  .icon-link {
+    padding: 6px 12px;
   }
 }
 </style>

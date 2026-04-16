@@ -22,7 +22,9 @@ public class OrderCommandService {
     public static final String TOPIC_ORDER = "ORDER_TOPIC";
     public static final String TAG_CREATED = "CREATED";
     public static final String TAG_PAID = "PAID";
+    public static final String TAG_DELIVERED = "DELIVERED";
     public static final String TAG_COMPLETED = "COMPLETED";
+    public static final String TAG_CANCELLED = "CANCELLED";
 
     private final TradeOrderRepository tradeOrderRepository;
     private final RocketMQTemplate rocketMQTemplate;
@@ -177,8 +179,12 @@ public class OrderCommandService {
         }
         
         order.setStatus(TradeOrder.OrderStatus.DELIVERED);
-        
-        return tradeOrderRepository.save(order);
+
+        TradeOrder saved = tradeOrderRepository.save(order);
+
+        sendOrderEvent(saved, TAG_DELIVERED);
+
+        return saved;
     }
 
     /**
@@ -228,8 +234,12 @@ public class OrderCommandService {
         }
         
         order.setStatus(TradeOrder.OrderStatus.CANCELLED);
-        
-        return tradeOrderRepository.save(order);
+
+        TradeOrder saved = tradeOrderRepository.save(order);
+
+        sendOrderEvent(saved, TAG_CANCELLED);
+
+        return saved;
     }
 
     // 查询方法
@@ -261,6 +271,10 @@ public class OrderCommandService {
 
     // 发送订单事件消息
     private void sendOrderEvent(TradeOrder order, String tag) {
+        sendOrderEvent(order, tag, "道具");
+    }
+
+    private void sendOrderEvent(TradeOrder order, String tag, String itemName) {
         try {
             String json = objectMapper.writeValueAsString(new OrderEvent(
                 order.getId(),
@@ -271,7 +285,8 @@ public class OrderCommandService {
                 order.getListingId(),
                 order.getTotalAmount(),
                 order.getStatus().name(),
-                order.getTradeMode().name()
+                order.getTradeMode().name(),
+                itemName
             ));
             try {
                 rocketMQTemplate.asyncSend(TOPIC_ORDER + ":" + tag,
@@ -284,20 +299,17 @@ public class OrderCommandService {
                             @Override
                             public void onException(java.lang.Throwable e) {
                                 System.err.println("订单事件消息发送失败: " + e.getMessage());
-                                // 记录日志但不影响主业务
                             }
                         });
             } catch (Exception e) {
                 System.err.println("RocketMQ发送异常: " + e.getMessage());
-                // 记录日志但不影响主业务
             }
         } catch (Exception e) {
             System.err.println("发送订单事件消息失败: " + e.getMessage());
-            // 记录日志但不影响主业务
         }
     }
 
-    public record OrderEvent(Long orderId, String orderNo, Long buyerId, Long sellerId, 
-                             Long itemId, Long listingId, BigDecimal amount, 
-                             String status, String tradeMode) {}
+    public record OrderEvent(Long orderId, String orderNo, Long buyerId, Long sellerId,
+                            Long itemId, Long listingId, BigDecimal amount,
+                            String status, String tradeMode, String itemName) {}
 }

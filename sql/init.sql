@@ -2,6 +2,7 @@
 CREATE DATABASE IF NOT EXISTS game_user DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS game_item DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS game_trade DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS game_message DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 以下为示意 DDL；开发环境可使用 JPA ddl-auto=update 自动建表
 -- 生产环境建议固定版本迁移（Flyway/Liquibase）
@@ -102,4 +103,22 @@ CREATE TABLE IF NOT EXISTS trade_transaction (
     created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     INDEX idx_order_id (order_id),
     INDEX idx_user_id (user_id)
+) ENGINE=InnoDB;
+
+-- 消息服务数据库
+USE game_message;
+-- 用户消息表
+CREATE TABLE IF NOT EXISTS user_messages (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    type VARCHAR(32) NOT NULL COMMENT '消息类型: ORDER_CREATED-订单创建, ORDER_PAID-已支付, ORDER_DELIVERED-已发货, ORDER_COMPLETED-交易完成, ORDER_CANCELLED-订单取消',
+    title VARCHAR(128) NOT NULL COMMENT '消息标题',
+    content VARCHAR(512) COMMENT '消息内容',
+    order_id BIGINT COMMENT '关联订单ID',
+    related_user_id BIGINT COMMENT '关联用户ID（对方用户）',
+    is_read TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已读: 0-未读, 1-已读',
+    created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    INDEX idx_user_id (user_id),
+    INDEX idx_user_is_read (user_id, is_read),
+    INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB;

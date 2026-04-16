@@ -16,7 +16,9 @@ async function request(path, options = {}) {
   }
 
   const hasBody = Object.prototype.hasOwnProperty.call(options, 'body')
-  if (hasBody && headers['Content-Type'] == null) {
+  const isFormData = options.body instanceof FormData
+
+  if (hasBody && headers['Content-Type'] == null && !isFormData) {
     headers['Content-Type'] = 'application/json'
   }
 

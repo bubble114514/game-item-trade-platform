@@ -46,6 +46,22 @@ spring:
           uri: lb://message-service
           predicates:
             - Path=/api/message/**
+        - id: upload-route
+          uri: lb://item-service
+          predicates:
+            - Path=/api/upload/**
+        - id: uploads-route
+          uri: lb://item-service
+          predicates:
+            - Path=/uploads/**
+        - id: uploads-img-route
+          uri: lb://item-service
+          predicates:
+            - Path=/api/uploads/img/**
+        - id: uploads-png-route
+          uri: lb://item-service
+          predicates:
+            - Path=/api/uploads/png/**
     sentinel:
       transport:
         dashboard: 192.168.201.100:8080

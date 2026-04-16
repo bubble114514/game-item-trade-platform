@@ -27,21 +27,15 @@ import Footer from './components/Footer.vue'
 /* 主内容区 */
 .container {
   flex: 1;
-  max-width: 1200px;
-  margin: 24px auto;
-  padding: 0 24px;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px 40px;
 }
 
-/* 响应式设计 */
-@media (max-width: 1200px) {
+@media (max-width: 768px) {
   .container {
-    padding: 0 16px;
-  }
-}
-
-@media (max-width: 540px) {
-  .container {
-    margin: 16px auto;
+    padding: 16px 20px;
   }
 }
 </style>

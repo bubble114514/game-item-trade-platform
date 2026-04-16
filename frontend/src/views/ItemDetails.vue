@@ -1,102 +1,100 @@
 <template>
   <div class="item-details-page">
-    <div v-loading="isLoading" class="item-details-container">
-      <el-row :gutter="24" v-if="item">
-        <!-- 左侧：商品信息 -->
-        <el-col :xs="24" :md="16">
-          <el-card class="info-card" shadow="never">
-            <div class="item-header">
-              <div class="item-image">
-                <el-icon :size="80" color="#409EFF"><Goods /></el-icon>
-              </div>
-              <div class="item-title-area">
-                <h2>{{ item.name }}</h2>
-                <div class="tags">
-                  <el-tag>{{ item.game }}</el-tag>
-                  <el-tag type="success">{{ item.category }}</el-tag>
-                </div>
+    <div v-loading="isLoading" class="item-details-container" v-if="item">
+      <el-row :gutter="32">
+        <el-col :xs="24" :md="14">
+          <div class="item-main">
+            <div class="item-image-wrapper">
+              <img v-if="item.iconUrl" :src="getImageUrl(item.iconUrl)" class="item-img" />
+              <div v-else class="img-placeholder">
+                <el-icon :size="100" color="#c0c4cc"><Goods /></el-icon>
               </div>
             </div>
-            
-            <el-divider />
-            
+          </div>
+        </el-col>
+
+        <el-col :xs="24" :md="10">
+          <div class="item-info">
+            <div class="item-category-tag">{{ item.category }}</div>
+            <h1 class="item-title">{{ item.name }}</h1>
+            <div class="item-game">
+              <el-icon><Monitor /></el-icon>
+              <span>{{ item.game }}</span>
+            </div>
+
             <div class="item-desc-section">
               <h3>商品描述</h3>
               <p class="desc-text">{{ item.description || '暂无描述' }}</p>
             </div>
-            
-            <div class="item-meta">
-              <el-descriptions :column="2" border>
-                <el-descriptions-item label="商品ID">{{ item.id }}</el-descriptions-item>
-                <el-descriptions-item label="参考价格">
-                  <span class="ref-price">¥{{ item.referencePrice ?? 'N/A' }}</span>
-                </el-descriptions-item>
-                <el-descriptions-item label="所属游戏">{{ item.game }}</el-descriptions-item>
-                <el-descriptions-item label="商品分类">{{ item.category }}</el-descriptions-item>
-              </el-descriptions>
+
+            <div class="item-meta-grid">
+              <div class="meta-item">
+                <span class="meta-label">参考价</span>
+                <span class="meta-value price">¥{{ item.referencePrice || 0 }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">商品ID</span>
+                <span class="meta-value">{{ item.id }}</span>
+              </div>
             </div>
-          </el-card>
+          </div>
         </el-col>
-        
-        <!-- 右侧：购买选项 -->
-        <el-col :xs="24" :md="8">
-          <el-card class="purchase-card" shadow="never">
-            <template #header>
-              <div class="card-header">
-                <span>购买选项 (挂牌列表)</span>
-              </div>
-            </template>
-            
-            <div v-if="listings.length > 0" class="listings-list">
-              <div v-for="listing in listings" :key="listing.id" class="listing-item">
-                <div class="listing-info">
-                  <div class="seller">卖家ID: {{ listing.sellerId }}</div>
-                  <div class="stock">库存: {{ listing.quantity }}</div>
+      </el-row>
+
+      <el-row :gutter="32" class="listings-section">
+        <el-col :span="24">
+          <div class="section-header">
+            <el-icon color="#667eea" :size="24"><List /></el-icon>
+            <h2>挂牌列表 ({{ listings.length }})</h2>
+          </div>
+
+          <div v-if="listings.length > 0" class="listings-grid">
+            <div v-for="listing in listings" :key="listing.id" class="listing-card">
+              <div class="listing-info">
+                <div class="seller-info">
+                  <el-icon><User /></el-icon>
+                  <span>卖家: {{ listing.sellerId }}</span>
                 </div>
-                <div class="listing-action">
-                  <div class="price">¥{{ listing.price }}</div>
-                  <el-button type="primary" size="small" @click="openBuyDialog(listing)">购买</el-button>
+                <div class="stock-info">
+                  <el-icon><Box /></el-icon>
+                  <span>库存: {{ listing.quantity }}</span>
                 </div>
               </div>
+              <div class="listing-price">
+                <span class="price-value">¥{{ listing.price }}</span>
+              </div>
+              <el-button type="primary" @click="openBuyDialog(listing)">立即购买</el-button>
             </div>
-            <el-empty v-else description="暂无卖家挂牌出售此商品" :image-size="100" />
-          </el-card>
+          </div>
+          <el-empty v-else description="暂无卖家挂牌出售此商品" />
         </el-col>
       </el-row>
     </div>
 
-    <!-- 购买确认弹窗 -->
-    <el-dialog
-      v-model="buyDialogVisible"
-      title="确认购买"
-      width="400px"
-    >
+    <el-dialog v-model="buyDialogVisible" title="确认购买" width="420px" class="buy-dialog">
       <div v-if="selectedListing" class="buy-dialog-content">
-        <p><strong>商品：</strong>{{ item?.name }}</p>
-        <p><strong>单价：</strong><span class="price">¥{{ selectedListing.price }}</span></p>
-        <p><strong>库存：</strong>{{ selectedListing.quantity }}</p>
-        
-        <div class="quantity-input">
-          <span>购买数量：</span>
-          <el-input-number 
-            v-model="buyQuantity" 
-            :min="1" 
-            :max="selectedListing.quantity" 
-            size="small"
-          />
+        <div class="buy-item-info">
+          <img v-if="item.iconUrl" :src="getImageUrl(item.iconUrl)" class="buy-item-img" />
+          <div class="buy-item-detail">
+            <h4>{{ item?.name }}</h4>
+            <p class="buy-price">¥{{ selectedListing.price }}</p>
+          </div>
         </div>
-        
-        <div class="total-price">
-          总计：<span class="price">¥{{ (selectedListing.price * buyQuantity).toFixed(2) }}</span>
+
+        <div class="buy-form">
+          <div class="form-item">
+            <label>购买数量</label>
+            <el-input-number v-model="buyQuantity" :min="1" :max="selectedListing.quantity" size="default" />
+          </div>
+          <div class="form-item total">
+            <label>总计</label>
+            <span class="total-price">¥{{ (selectedListing.price * buyQuantity).toFixed(2) }}</span>
+          </div>
         </div>
       </div>
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="buyDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="confirmBuy" :loading="isBuying">
-            确认下单
-          </el-button>
-        </span>
+        <el-button @click="buyDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmBuy" :loading="isBuying">确认下单</el-button>
       </template>
     </el-dialog>
   </div>
@@ -107,7 +105,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { request } from '../api/client.js'
 import { useUserStore } from '../store/user'
-import { Goods } from '@element-plus/icons-vue'
+import { Goods, Monitor, List, User, Box } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
@@ -123,13 +121,19 @@ const selectedListing = ref(null)
 const buyQuantity = ref(1)
 const isBuying = ref(false)
 
+function getImageUrl(iconUrl) {
+  if (!iconUrl) return ''
+  const filename = iconUrl.split(/[/\\]/).pop()
+  return `/api/uploads/img/${filename}`
+}
+
 async function fetchItemDetails() {
   const itemId = route.params.id
   isLoading.value = true
   try {
     const itemResponse = await request(`/item/${itemId}`, { method: 'GET' })
     item.value = itemResponse.data
-    
+
     const listingsResponse = await request(`/item/${itemId}/listings`, { method: 'GET' })
     listings.value = listingsResponse.data?.content || []
   } catch (error) {
@@ -152,7 +156,7 @@ function openBuyDialog(listing) {
 
 async function confirmBuy() {
   if (!selectedListing.value) return
-  
+
   isBuying.value = true
   try {
     const body = {
@@ -160,14 +164,14 @@ async function confirmBuy() {
       buyerId: Number(userStore.userId),
       quantity: buyQuantity.value,
     }
-    
+
     const response = await request('/trade/orders/fixed/listing', {
       method: 'POST',
       body: JSON.stringify(body),
     })
-    
+
     buyDialogVisible.value = false
-    
+
     ElMessageBox.confirm(
       `下单成功！订单号：${response.data.id}。是否立即前往支付？`,
       '购买成功',
@@ -177,13 +181,12 @@ async function confirmBuy() {
         type: 'success',
       }
     ).then(() => {
-      // 模拟支付流程，实际应该跳转到支付页面
       mockPay(response.data.id)
     }).catch(() => {
       router.push('/orders')
     })
-    
-    fetchItemDetails() // 刷新库存
+
+    fetchItemDetails()
   } catch (error) {
     console.error('购买失败:', error)
   } finally {
@@ -193,13 +196,11 @@ async function confirmBuy() {
 
 async function mockPay(orderId) {
   try {
-    await request(`/trade/orders/${orderId}/pay?buyerId=${userStore.userId}`, {
-      method: 'POST'
-    })
-    ElMessage.success('支付成功！')
+    await request(`/trade/orders/${orderId}/pay`, { method: 'POST' })
+    ElMessage.success('支付成功')
     router.push('/orders')
-  } catch (e) {
-    console.error('支付失败:', e)
+  } catch (error) {
+    ElMessage.error('支付失败')
   }
 }
 
@@ -210,148 +211,277 @@ onMounted(() => {
 
 <style scoped>
 .item-details-page {
-  padding: 20px 0;
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 24px 0 60px;
 }
 
 .item-details-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 0 24px;
 }
 
-.info-card {
-  border-radius: 8px;
-  margin-bottom: 20px;
+.item-main {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
-.item-header {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-}
-
-.item-image {
-  width: 120px;
-  height: 120px;
-  background: #f5f7fa;
-  border-radius: 8px;
+.item-image-wrapper {
+  width: 100%;
+  height: 400px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.item-title-area h2 {
-  margin: 0 0 12px 0;
-  font-size: 24px;
-  color: #303133;
+.item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
-.tags {
+.img-placeholder {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.item-info {
+  padding: 8px 0;
+}
+
+.item-category-tag {
+  display: inline-block;
+  padding: 6px 16px;
+  background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+  color: #667eea;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.item-title {
+  margin: 0 0 16px 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.3;
+}
+
+.item-game {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: #667eea;
+  margin-bottom: 24px;
 }
 
 .item-desc-section {
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 20px;
   margin-bottom: 24px;
 }
 
 .item-desc-section h3 {
+  margin: 0 0 12px 0;
   font-size: 16px;
   color: #303133;
-  margin: 0 0 12px 0;
 }
 
 .desc-text {
-  color: #606266;
-  line-height: 1.6;
   margin: 0;
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.7;
 }
 
-.ref-price {
+.item-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.meta-item {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.meta-label {
+  display: block;
+  font-size: 13px;
   color: #909399;
-  text-decoration: line-through;
+  margin-bottom: 8px;
 }
 
-.purchase-card {
-  border-radius: 8px;
-}
-
-.card-header {
-  font-weight: bold;
+.meta-value {
+  font-size: 18px;
+  font-weight: 600;
   color: #303133;
 }
 
-.listings-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.meta-value.price {
+  color: #ff6b6b;
+  font-size: 24px;
 }
 
-.listing-item {
+.listings-section {
+  margin-top: 32px;
+}
+
+.section-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #ebeef5;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #1a1a2e;
+}
+
+.listings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.listing-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f0f0f5;
+}
+
+.listing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.12);
+  border-color: #667eea;
 }
 
 .listing-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex: 1;
 }
 
-.seller {
-  font-size: 13px;
+.seller-info,
+.stock-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
   color: #606266;
+  margin-bottom: 6px;
 }
 
-.stock {
-  font-size: 12px;
-  color: #909399;
+.listing-price {
+  margin-right: 12px;
 }
 
-.listing-action {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.price {
-  font-size: 18px;
-  font-weight: bold;
-  color: #F56C6C;
+.price-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ff6b6b;
 }
 
 .buy-dialog-content {
-  font-size: 14px;
+  padding: 8px 0;
 }
 
-.buy-dialog-content p {
-  margin: 8px 0;
-}
-
-.quantity-input {
+.buy-item-info {
   display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.buy-item-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: white;
+}
+
+.buy-item-detail h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.buy-price {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #ff6b6b;
+}
+
+.buy-form {
+  padding: 0 8px;
+}
+
+.form-item {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  margin: 16px 0;
+  margin-bottom: 16px;
+}
+
+.form-item label {
+  font-size: 14px;
+  color: #606266;
+}
+
+.form-item.total {
+  padding-top: 16px;
+  border-top: 1px solid #eee;
 }
 
 .total-price {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #ebeef5;
-  text-align: right;
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ff6b6b;
+}
+
+:deep(.el-button--primary) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+}
+
+:deep(.el-button--primary:hover) {
+  background: linear-gradient(135deg, #5a71d2 0%, #6a4190 100%);
 }
 
 @media (max-width: 768px) {
-  .item-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .item-title {
+    font-size: 24px;
+  }
+
+  .item-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .listings-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

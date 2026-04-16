@@ -45,10 +45,27 @@ public class ItemController {
     @PostMapping
     public ApiResult<GameItem> create(@RequestBody CreateItemReq req) {
         GameItem item = itemQueryService.createItem(
-            req.name(), req.game(), req.category(), 
+            req.name(), req.game(), req.category(),
             req.referencePrice(), req.description(), req.iconUrl()
         );
         return ApiResult.ok(item);
+    }
+
+    @PutMapping("/{id}")
+    public ApiResult<GameItem> update(@PathVariable Long id, @RequestBody UpdateItemReq req) {
+        GameItem item = itemQueryService.updateItem(
+            id, req.name(), req.game(), req.category(),
+            req.referencePrice(), req.description(), req.iconUrl()
+        );
+        return ApiResult.ok(item);
+    }
+
+    @PutMapping("/listings/{id}")
+    public ApiResult<ItemListing> updateListing(@PathVariable Long id, @RequestBody UpdateListingReq req) {
+        ItemListing listing = itemQueryService.updateListing(
+            id, req.price(), req.quantity(), req.description()
+        );
+        return ApiResult.ok(listing);
     }
     
     // 挂牌接口
@@ -69,9 +86,13 @@ public class ItemController {
     @GetMapping("/listings")
     public ApiResult<Page<ItemListing>> listActiveListings(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String game,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice) {
         Pageable pageable = PageRequest.of(page, size);
-        return ApiResult.ok(itemQueryService.listActiveListings(pageable));
+        return ApiResult.ok(itemQueryService.listActiveListings(pageable, game, category, minPrice, maxPrice));
     }
     
     @GetMapping("/{itemId}/listings")
@@ -105,9 +126,14 @@ public class ItemController {
     }
     
     // 请求记录
-    public record CreateItemReq(String name, String game, String category, 
+    public record CreateItemReq(String name, String game, String category,
                                 BigDecimal referencePrice, String description, String iconUrl) {}
-    
-    public record CreateListingReq(Long itemId, Long sellerId, BigDecimal price, 
+
+    public record UpdateItemReq(String name, String game, String category,
+                                BigDecimal referencePrice, String description, String iconUrl) {}
+
+    public record CreateListingReq(Long itemId, Long sellerId, BigDecimal price,
                                    Integer quantity, String description) {}
+
+    public record UpdateListingReq(BigDecimal price, Integer quantity, String description) {}
 }

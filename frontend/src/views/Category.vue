@@ -1,30 +1,38 @@
 <template>
   <div class="category-page">
     <div class="page-header">
-      <h2>商品分类</h2>
-      <p class="subtitle">浏览不同类别的游戏道具</p>
+      <div class="header-content">
+        <div class="header-icon">
+          <el-icon :size="40" color="#fff"><Grid /></el-icon>
+        </div>
+        <div class="header-text">
+          <h2>商品分类</h2>
+          <p>浏览不同类别的游戏道具</p>
+        </div>
+      </div>
     </div>
-    
+
     <div v-loading="isLoading" class="category-container">
       <el-empty v-if="!isLoading && categories.length === 0" description="暂无分类数据" />
-      
+
       <div v-else class="category-grid">
-        <el-card 
-          v-for="category in categories" 
+        <el-card
+          v-for="category in categories"
           :key="category.name"
           class="category-card"
           shadow="hover"
           @click="navigateToCategory(category.name)"
         >
           <div class="category-content">
-            <div class="category-icon">
-              <span>{{ category.icon }}</span>
+            <div class="category-icon-bg">
+              <span class="category-icon">{{ category.icon }}</span>
             </div>
             <h3 class="category-name">{{ category.name }}</h3>
             <p class="category-desc">{{ category.description }}</p>
-            <el-tag size="small" type="info" effect="plain" class="category-count">
-              {{ category.count }} 个道具
-            </el-tag>
+            <div class="category-count">
+              <span class="count-num">{{ category.count }}</span>
+              <span class="count-text">个道具</span>
+            </div>
           </div>
         </el-card>
       </div>
@@ -37,6 +45,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { request } from '../api/client.js'
+import { Grid } from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -112,46 +121,74 @@ onMounted(() => {
 
 <style scoped>
 .category-page {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 20px;
 }
 
 .page-header {
-  text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  color: white;
 }
 
-.page-header h2 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  color: #303133;
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-.subtitle {
+.header-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.header-text h2 {
+  margin: 0 0 4px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+}
+
+.header-text p {
   margin: 0;
-  color: #909399;
-  font-size: 16px;
+  font-size: 14px;
+  opacity: 0.9;
 }
 
 .category-container {
-  min-height: 300px;
+  min-height: 400px;
 }
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 24px;
 }
 
 .category-card {
   cursor: pointer;
-  transition: all 0.3s;
-  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 16px;
+  border: none;
+  overflow: hidden;
 }
 
 .category-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-8px);
+  box-shadow: 0 16px 40px rgba(102, 126, 234, 0.2);
+}
+
+.category-card :deep(.el-card__body) {
+  padding: 32px 20px;
 }
 
 .category-content {
@@ -159,24 +196,33 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 10px 0;
 }
 
-.category-icon {
-  font-size: 48px;
+.category-icon-bg {
   width: 80px;
   height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f5f7fa;
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
   border-radius: 50%;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.category-card:hover .category-icon-bg {
+  background: linear-gradient(135deg, #667eea30 0%, #764ba230 100%);
+  transform: scale(1.1);
+}
+
+.category-icon {
+  font-size: 40px;
 }
 
 .category-name {
   margin: 0 0 8px 0;
   font-size: 18px;
+  font-weight: 600;
   color: #303133;
 }
 
@@ -194,6 +240,60 @@ onMounted(() => {
 }
 
 .category-count {
-  border-radius: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 6px 16px;
+  background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.category-card:hover .category-count {
+  background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+}
+
+.count-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.count-text {
+  font-size: 12px;
+  color: #909399;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    padding: 20px;
+  }
+
+  .header-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .header-text h2 {
+    font-size: 20px;
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+
+  .category-card :deep(.el-card__body) {
+    padding: 20px 16px;
+  }
+
+  .category-icon-bg {
+    width: 64px;
+    height: 64px;
+  }
+
+  .category-icon {
+    font-size: 32px;
+  }
 }
 </style>

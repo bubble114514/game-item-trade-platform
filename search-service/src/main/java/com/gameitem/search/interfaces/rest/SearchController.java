@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -23,7 +24,9 @@ public class SearchController {
     @GetMapping("/items")
     public ApiResult<List<ItemDocument>> search(
             @RequestParam(defaultValue = "") String q,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResult.ok(itemSearchService.searchByKeyword(q, size));
+        return ApiResult.ok(itemSearchService.searchByKeyword(q, minPrice, maxPrice, size));
     }
 }

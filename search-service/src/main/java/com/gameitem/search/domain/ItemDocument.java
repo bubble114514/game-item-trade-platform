@@ -13,7 +13,7 @@ public class ItemDocument {
     @Id
     private Long id;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Text, analyzer = "standard")
     private String name;
 
     @Field(type = FieldType.Keyword)
@@ -24,6 +24,15 @@ public class ItemDocument {
 
     @Field(type = FieldType.Double)
     private BigDecimal referencePrice;
+
+    @Field(type = FieldType.Text, analyzer = "standard")
+    private String description;
+
+    @Field(type = FieldType.Keyword)
+    private String iconUrl;
+
+    @Field(type = FieldType.Boolean)
+    private Boolean active;
 
     public Long getId() {
         return id;
@@ -63,5 +72,29 @@ public class ItemDocument {
 
     public void setReferencePrice(BigDecimal referencePrice) {
         this.referencePrice = referencePrice;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getIconUrl() {
+        return iconUrl;
+    }
+
+    public void setIconUrl(String iconUrl) {
+        this.iconUrl = iconUrl;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 }
