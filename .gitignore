@@ -11,3 +11,4 @@ target/
 .env
 *.local.yml
 node_modules
+logs/

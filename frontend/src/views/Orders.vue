@@ -38,9 +38,9 @@
                         class="order-item-card"
                       >
                         <div class="order-header">
-                          <div class="order-id-box">
-                            <span class="order-label">订单号</span>
-                            <span class="order-id">{{ order.id }}</span>
+                          <div class="order-info-row">
+                            <span class="order-id">订单号: {{ order.orderNo }}</span>
+                            <span class="order-time">{{ formatDate(order.createdAt) }}</span>
                           </div>
                           <el-tag :type="getStatusType(order.status)" effect="light" class="status-tag">
                             {{ getStatusText(order.status) }}
@@ -48,80 +48,88 @@
                         </div>
 
                         <div class="order-body">
-                          <div class="item-info">
-                            <h4 class="item-name">{{ order.itemName }}</h4>
-                            <p class="item-desc">{{ order.itemDesc || '暂无描述' }}</p>
+                          <div class="item-main">
+                            <div class="item-image" v-if="order.itemIcon">
+                              <img :src="getImageUrl(order.itemIcon)" @error="handleImageError($event, order)" />
+                            </div>
+                            <div class="item-image placeholder" v-else>
+                              <el-icon :size="40" color="#c0c4cc"><Goods /></el-icon>
+                            </div>
+                            <div class="item-details">
+                              <h4 class="item-name">{{ order.itemName || '商品 #' + order.itemId }}</h4>
+                              <div class="item-meta">
+                                <span class="game-tag">{{ order.game || '游戏道具' }}</span>
+                              </div>
+                            </div>
                           </div>
-                          <div class="item-price-qty">
-                            <div class="price">¥{{ order.unitPrice.toFixed(2) }}</div>
+                          <div class="price-section">
+                            <div class="unit-price">¥{{ order.unitPrice }}</div>
                             <div class="quantity">x{{ order.quantity }}</div>
                           </div>
                         </div>
 
-                        <div class="order-summary">
-                          <div class="summary-grid">
-                            <div class="summary-item">
-                              <span class="summary-label">交易模式</span>
-                              <span class="summary-value">{{ order.mode === 'listing' ? '基于挂牌' : '一口价' }}</span>
-                            </div>
-                            <div class="summary-item">
-                              <span class="summary-label">创建时间</span>
-                              <span class="summary-value">{{ formatDate(order.createTime) }}</span>
-                            </div>
-                            <div class="summary-item total">
-                              <span class="summary-label">总金额</span>
-                              <span class="total-amount">¥{{ (order.unitPrice * order.quantity).toFixed(2) }}</span>
-                            </div>
+                        <div class="order-footer">
+                          <div class="total-row">
+                            <span class="total-label">合计:</span>
+                            <span class="total-amount">¥{{ order.totalAmount }}</span>
                           </div>
-                        </div>
-
-                        <div class="order-actions">
-                          <el-button
-                            v-if="order.status === 'PENDING_PAYMENT'"
-                            type="primary"
-                            @click="payOrder(order.id)"
-                            class="action-btn primary"
-                          >
-                            <el-icon><Wallet /></el-icon>
-                            去支付
-                          </el-button>
-                          <el-button
-                            v-else-if="order.status === 'PENDING_DELIVERY'"
-                            type="warning"
-                            disabled
-                            class="action-btn"
-                          >
-                            <el-icon><Clock /></el-icon>
-                            等待发货
-                          </el-button>
-                          <el-button
-                            v-else-if="order.status === 'PENDING_RECEIPT'"
-                            type="success"
-                            @click="confirmReceipt(order.id)"
-                            class="action-btn success"
-                          >
-                            <el-icon><Check /></el-icon>
-                            确认收货
-                          </el-button>
-                          <el-button
-                            v-else-if="order.status === 'COMPLETED'"
-                            @click="viewOrderDetail(order.id)"
-                            class="action-btn"
-                          >
-                            <el-icon><View /></el-icon>
-                            查看详情
-                          </el-button>
-                          <el-button
-                            v-else
-                            disabled
-                            class="action-btn"
-                          >
-                            已完成
-                          </el-button>
+                          <div class="actions">
+                            <el-button
+                              v-if="order.status === 'CREATED'"
+                              type="primary"
+                              @click="payOrder(order)"
+                              class="action-btn primary"
+                            >
+                              <el-icon><Wallet /></el-icon>
+                              支付
+                            </el-button>
+                            <el-button
+                              v-else-if="order.status === 'PAID'"
+                              type="warning"
+                              disabled
+                              class="action-btn"
+                            >
+                              <el-icon><Clock /></el-icon>
+                              待发货
+                            </el-button>
+                            <el-button
+                              v-else-if="order.status === 'DELIVERED'"
+                              type="success"
+                              @click="confirmReceipt(order)"
+                              class="action-btn success"
+                            >
+                              <el-icon><Check /></el-icon>
+                              确认收货
+                            </el-button>
+                            <el-button
+                              v-else-if="order.status === 'COMPLETED'"
+                              class="action-btn"
+                            >
+                              <el-icon><CircleCheck /></el-icon>
+                              已完成
+                            </el-button>
+                            <el-button
+                              v-else-if="order.status === 'CANCELLED'"
+                              class="action-btn"
+                            >
+                              已取消
+                            </el-button>
+                          </div>
                         </div>
                       </div>
                     </template>
                     <el-empty v-else description="暂无订单" />
+                  </div>
+                  <div class="pagination-wrapper" v-if="total > 0">
+                    <el-pagination
+                      v-model:current-page="currentPage"
+                      v-model:page-size="pageSize"
+                      :page-sizes="[5, 10, 20, 50]"
+                      :total="total"
+                      layout="total, sizes, prev, pager, next, jumper"
+                      @size-change="handleSizeChange"
+                      @current-change="handlePageChange"
+                    />
                   </div>
                 </el-tab-pane>
               </el-tabs>
@@ -149,9 +157,9 @@
                         class="order-item-card"
                       >
                         <div class="order-header">
-                          <div class="order-id-box">
-                            <span class="order-label">订单号</span>
-                            <span class="order-id">{{ order.id }}</span>
+                          <div class="order-info-row">
+                            <span class="order-id">订单号: {{ order.orderNo }}</span>
+                            <span class="order-time">{{ formatDate(order.createdAt) }}</span>
                           </div>
                           <el-tag :type="getStatusType(order.status)" effect="light" class="status-tag">
                             {{ getStatusText(order.status) }}
@@ -159,78 +167,86 @@
                         </div>
 
                         <div class="order-body">
-                          <div class="item-info">
-                            <h4 class="item-name">{{ order.itemName }}</h4>
-                            <p class="item-desc">{{ order.itemDesc || '暂无描述' }}</p>
+                          <div class="item-main">
+                            <div class="item-image" v-if="order.itemIcon">
+                              <img :src="getImageUrl(order.itemIcon)" @error="handleImageError($event, order)" />
+                            </div>
+                            <div class="item-image placeholder" v-else>
+                              <el-icon :size="40" color="#c0c4cc"><Goods /></el-icon>
+                            </div>
+                            <div class="item-details">
+                              <h4 class="item-name">{{ order.itemName || '商品 #' + order.itemId }}</h4>
+                              <div class="item-meta">
+                                <span class="game-tag">{{ order.game || '游戏道具' }}</span>
+                              </div>
+                            </div>
                           </div>
-                          <div class="item-price-qty">
-                            <div class="price">¥{{ order.unitPrice.toFixed(2) }}</div>
+                          <div class="price-section">
+                            <div class="unit-price">¥{{ order.unitPrice }}</div>
                             <div class="quantity">x{{ order.quantity }}</div>
                           </div>
                         </div>
 
-                        <div class="order-summary">
-                          <div class="summary-grid">
-                            <div class="summary-item">
-                              <span class="summary-label">交易模式</span>
-                              <span class="summary-value">{{ order.mode === 'listing' ? '基于挂牌' : '一口价' }}</span>
-                            </div>
-                            <div class="summary-item">
-                              <span class="summary-label">创建时间</span>
-                              <span class="summary-value">{{ formatDate(order.createTime) }}</span>
-                            </div>
-                            <div class="summary-item total">
-                              <span class="summary-label">总金额</span>
-                              <span class="total-amount">¥{{ (order.unitPrice * order.quantity).toFixed(2) }}</span>
-                            </div>
+                        <div class="order-footer">
+                          <div class="total-row">
+                            <span class="total-label">合计:</span>
+                            <span class="total-amount">¥{{ order.totalAmount }}</span>
                           </div>
-                        </div>
-
-                        <div class="order-actions">
-                          <el-button
-                            v-if="order.status === 'PENDING_PAYMENT'"
-                            disabled
-                            class="action-btn"
-                          >
-                            <el-icon><Clock /></el-icon>
-                            等待支付
-                          </el-button>
-                          <el-button
-                            v-else-if="order.status === 'PENDING_DELIVERY'"
-                            type="primary"
-                            @click="deliverOrder(order.id)"
-                            class="action-btn primary"
-                          >
-                            <el-icon><Upload /></el-icon>
-                            去发货
-                          </el-button>
-                          <el-button
-                            v-else-if="order.status === 'PENDING_RECEIPT'"
-                            disabled
-                            class="action-btn"
-                          >
-                            <el-icon><Clock /></el-icon>
-                            等待确认收货
-                          </el-button>
-                          <el-button
-                            v-else-if="order.status === 'COMPLETED'"
-                            @click="viewOrderDetail(order.id)"
-                            class="action-btn"
-                          >
-                            <el-icon><View /></el-icon>
-                            查看详情
-                          </el-button>
-                          <el-button
-                            v-else
-                            disabled
-                            class="action-btn"
-                          >
-                            已完成
-                          </el-button>
+                          <div class="actions">
+                            <el-button
+                              v-if="order.status === 'CREATED'"
+                              disabled
+                              class="action-btn"
+                            >
+                              <el-icon><Clock /></el-icon>
+                              等待支付
+                            </el-button>
+                            <el-button
+                              v-else-if="order.status === 'PAID'"
+                              type="primary"
+                              @click="deliverOrder(order)"
+                              class="action-btn primary"
+                            >
+                              <el-icon><Upload /></el-icon>
+                              发货
+                            </el-button>
+                            <el-button
+                              v-else-if="order.status === 'DELIVERED'"
+                              disabled
+                              class="action-btn"
+                            >
+                              <el-icon><Clock /></el-icon>
+                              待确认收货
+                            </el-button>
+                            <el-button
+                              v-else-if="order.status === 'COMPLETED'"
+                              class="action-btn"
+                            >
+                              <el-icon><CircleCheck /></el-icon>
+                              已完成
+                            </el-button>
+                            <el-button
+                              v-else-if="order.status === 'CANCELLED'"
+                              class="action-btn"
+                            >
+                              已取消
+                            </el-button>
+                          </div>
                         </div>
                       </div>
                     </template>
                     <el-empty v-else description="暂无订单" />
+                  </div>
+                  <div class="pagination-wrapper" v-if="total > 0">
+                    <el-pagination
+                      v-model:current-page="currentPage"
+                      v-model:page-size="pageSize"
+                      :page-sizes="[5, 10, 20, 50]"
+                      :total="total"
+                      layout="total, sizes, prev, pager, next, jumper"
+                      @size-change="handleSizeChange"
+                      @current-change="handlePageChange"
+                    />
                   </div>
                 </el-tab-pane>
               </el-tabs>
@@ -248,7 +264,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { request } from '../api/client.js'
 import { useUserStore } from '../store/user.js'
-import { List, ShoppingCart, Sell, Wallet, Clock, Check, View, Upload } from '@element-plus/icons-vue'
+import { List, ShoppingCart, Sell, Wallet, Clock, Check, View, Upload, Goods, CircleCheck } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -257,12 +273,16 @@ const orders = ref([])
 const activeStatus = ref('all')
 const orderRole = ref('buyer')
 const isLoading = ref(false)
+const itemCache = new Map()
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 const orderStatuses = [
   { value: 'all', label: '全部' },
-  { value: 'PENDING_PAYMENT', label: '待支付' },
-  { value: 'PENDING_DELIVERY', label: '待发货' },
-  { value: 'PENDING_RECEIPT', label: '待收货' },
+  { value: 'CREATED', label: '待支付' },
+  { value: 'PAID', label: '待发货' },
+  { value: 'DELIVERED', label: '待收货' },
   { value: 'COMPLETED', label: '已完成' },
   { value: 'CANCELLED', label: '已取消' }
 ]
@@ -276,9 +296,9 @@ const filteredOrders = computed(() => {
 
 function getStatusText(status) {
   const statusMap = {
-    'PENDING_PAYMENT': '待支付',
-    'PENDING_DELIVERY': '待发货',
-    'PENDING_RECEIPT': '待收货',
+    'CREATED': '待支付',
+    'PAID': '待发货',
+    'DELIVERED': '待收货',
     'COMPLETED': '已完成',
     'CANCELLED': '已取消'
   }
@@ -287,46 +307,86 @@ function getStatusText(status) {
 
 function getStatusType(status) {
   const typeMap = {
-    'PENDING_PAYMENT': 'warning',
-    'PENDING_DELIVERY': 'primary',
-    'PENDING_RECEIPT': 'success',
+    'CREATED': 'warning',
+    'PAID': 'primary',
+    'DELIVERED': 'success',
     'COMPLETED': 'info',
     'CANCELLED': 'danger'
   }
   return typeMap[status] || 'info'
 }
 
-function formatDate(dateString) {
-  if (!dateString) return '未知'
-  const date = new Date(dateString)
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+function formatDate(dateValue) {
+  if (!dateValue) return '未知'
+  try {
+    const date = new Date(dateValue)
+    if (isNaN(date.getTime())) return '未知'
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return '未知'
+  }
 }
 
-function handleTabChange(tab) {
-  // 状态切换时不需要重新加载，因为filteredOrders已经是computed属性
+function getImageUrl(iconUrl) {
+  if (!iconUrl) return ''
+  if (iconUrl.startsWith('http') || iconUrl.startsWith('/')) {
+    return iconUrl
+  }
+  const filename = iconUrl.split(/[/\\]/).pop()
+  return `/api/uploads/img/${filename}`
 }
 
-function handleRoleChange(role) {
+function handleTabChange() {}
+
+function handleRoleChange() {
   activeStatus.value = 'all'
+  currentPage.value = 1
   fetchOrders()
 }
 
-async function deliverOrder(orderId) {
+function handlePageChange() {
+  fetchOrders()
+}
+
+function handleSizeChange() {
+  currentPage.value = 1
+  fetchOrders()
+}
+
+async function fetchItemDetails(itemId) {
+  if (itemCache.has(itemId)) {
+    return itemCache.get(itemId)
+  }
   try {
-    await ElMessageBox.confirm('确认发货吗？', '提示', {
+    const response = await request(`/item/${itemId}`, { method: 'GET' })
+    const item = response.data || null
+    itemCache.set(itemId, item)
+    return item
+  } catch {
+    return null
+  }
+}
+
+function handleImageError(event, order) {
+  event.target.style.display = 'none'
+  event.target.parentElement.classList.add('placeholder')
+}
+
+async function deliverOrder(order) {
+  try {
+    await ElMessageBox.confirm(`确定要给订单 ${order.orderNo} 发货吗？`, '发货确认', {
       confirmButtonText: '确认发货',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
-    // 调用后端发货接口
-    await request(`/trade/orders/${orderId}/deliver?sellerId=${userStore.userId}`, {
+
+    await request(`/trade/orders/${order.id}/deliver?id=${userStore.userId}`, {
       method: 'POST'
     })
     ElMessage.success('发货成功')
@@ -338,16 +398,15 @@ async function deliverOrder(orderId) {
   }
 }
 
-async function payOrder(orderId) {
+async function payOrder(order) {
   try {
-    await ElMessageBox.confirm('确认支付该订单吗？', '提示', {
+    await ElMessageBox.confirm(`确定要支付订单 ${order.orderNo} 吗？`, '支付确认', {
       confirmButtonText: '确认支付',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
-    // 调用后端支付接口
-    await request(`/trade/orders/${orderId}/pay?buyerId=${userStore.userId}`, {
+
+    await request(`/trade/orders/${order.id}/pay?id=${userStore.userId}`, {
       method: 'POST'
     })
     ElMessage.success('支付成功')
@@ -359,28 +418,15 @@ async function payOrder(orderId) {
   }
 }
 
-async function remindDelivery(orderId) {
+async function confirmReceipt(order) {
   try {
-    // 调用后端提醒发货接口
-    await request(`/trade/orders/${orderId}/deliver?sellerId=${userStore.userId}`, {
-      method: 'POST'
-    })
-    ElMessage.success('已提醒卖家发货')
-  } catch (e) {
-    ElMessage.error('提醒发货失败')
-  }
-}
-
-async function confirmReceipt(orderId) {
-  try {
-    await ElMessageBox.confirm('确认已收到商品吗？', '提示', {
+    await ElMessageBox.confirm(`确定已收到订单 ${order.orderNo} 的商品吗？`, '确认收货', {
       confirmButtonText: '确认收货',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
-    // 调用后端确认收货接口
-    await request(`/trade/orders/${orderId}/complete?buyerId=${userStore.userId}`, {
+
+    await request(`/trade/orders/${order.id}/complete?id=${userStore.userId}`, {
       method: 'POST'
     })
     ElMessage.success('确认收货成功')
@@ -392,27 +438,64 @@ async function confirmReceipt(orderId) {
   }
 }
 
-function viewOrderDetail(orderId) {
-  ElMessage.info('订单详情功能开发中')
-}
-
 async function fetchOrders() {
   if (!userStore.isLoggedIn) {
     router.push('/login')
     return
   }
+
+  let currentUserId = userStore.userId
+  console.log('初始 userId:', currentUserId)
+  console.log('localStorage userId:', localStorage.getItem('userId'))
   
+  if (!currentUserId) {
+    try {
+      const res = await request('/user/auth/current', { method: 'GET' })
+      console.log('/user/auth/current 响应:', res)
+      if (res.data?.userId) {
+        userStore.userId = res.data.userId
+        localStorage.setItem('userId', res.data.userId)
+        currentUserId = res.data.userId
+      }
+    } catch (e) {
+      console.error('获取用户信息失败:', e)
+    }
+  }
+
+  console.log('最终使用的 userId:', currentUserId)
+
+  if (!currentUserId) {
+    ElMessage.error('无法获取用户信息，请重新登录')
+    return
+  }
+
   isLoading.value = true
   try {
     let response
-    // 根据当前角色调用不同的API
-    if (orderRole.value === 'buyer') {
-      response = await request(`/trade/orders/buyer/${userStore.userId}`, { method: 'GET' })
-    } else {
-      response = await request(`/trade/orders/seller/${userStore.userId}`, { method: 'GET' })
-    }
-    // 后端返回的是分页数据，需要从content字段获取订单列表
-    orders.value = response.data?.content || []
+    const pageParams = `?page=${currentPage.value - 1}&size=${pageSize.value}`
+    const url = orderRole.value === 'buyer'
+      ? `/trade/orders/buyer/${currentUserId}${pageParams}`
+      : `/trade/orders/seller/${currentUserId}${pageParams}`
+    console.log('请求订单列表:', url)
+    response = await request(url, { method: 'GET' })
+    console.log('订单响应:', response)
+
+    total.value = response.data?.totalElements || 0
+    const orderList = response.data?.content || []
+
+    const ordersWithItem = await Promise.all(
+      orderList.map(async (order) => {
+        const item = await fetchItemDetails(order.itemId)
+        return {
+          ...order,
+          itemName: item?.name || '',
+          itemIcon: item?.iconUrl || '',
+          game: item?.game || ''
+        }
+      })
+    )
+
+    orders.value = ordersWithItem
   } catch (error) {
     console.error('获取订单失败:', error)
   } finally {
@@ -494,78 +577,40 @@ onMounted(() => {
   background: #ebeef5;
 }
 
-.custom-tabs :deep(.el-tabs__item) {
-  height: 48px;
-  line-height: 48px;
-  font-size: 15px;
-  color: #606266;
-  padding: 0 24px;
-}
-
-.custom-tabs :deep(.el-tabs__item.is-active) {
-  color: #667eea;
-  font-weight: 600;
-}
-
-.custom-tabs :deep(.el-tabs__active-bar) {
-  height: 3px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 3px;
-}
-
 .tab-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.status-tabs :deep(.el-tabs__header) {
-  margin: 0 0 16px 0;
-  padding: 0 16px;
-  background: #f5f7fa;
-  border-radius: 8px;
-}
-
-.status-tabs :deep(.el-tabs__nav-wrap::after) {
-  display: none;
+  gap: 8px;
+  font-size: 15px;
 }
 
 .status-tabs :deep(.el-tabs__item) {
-  height: 40px;
-  line-height: 40px;
-  font-size: 13px;
-  color: #606266;
+  font-size: 14px;
   padding: 0 16px;
+  height: 36px;
+  line-height: 36px;
 }
 
-.status-tabs :deep(.el-tabs__item.is-active) {
-  color: #667eea;
-  font-weight: 600;
-}
-
-.status-tabs :deep(.el-tabs__active-bar) {
-  height: 2px;
-  background: #667eea;
+.status-tabs :deep(.el-tabs__nav) {
+  height: 36px;
 }
 
 .order-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 16px;
+  min-height: 200px;
 }
 
 .order-item-card {
   background: white;
-  border-radius: 12px;
   border: 1px solid #ebeef5;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
   transition: all 0.3s ease;
 }
 
 .order-item-card:hover {
   border-color: #667eea;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
 }
 
 .order-header {
@@ -574,25 +619,25 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px dashed #ebeef5;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.order-id-box {
+.order-info-row {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-}
-
-.order-label {
-  font-size: 12px;
-  color: #909399;
+  gap: 4px;
 }
 
 .order-id {
   font-size: 14px;
-  color: #303133;
   font-weight: 600;
+  color: #303133;
   font-family: monospace;
+}
+
+.order-time {
+  font-size: 12px;
+  color: #909399;
 }
 
 .status-tag {
@@ -602,11 +647,38 @@ onMounted(() => {
 .order-body {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
 }
 
-.item-info {
+.item-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   flex: 1;
+}
+
+.item-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.item-details {
+  flex: 1;
+  min-width: 0;
 }
 
 .item-name {
@@ -614,88 +686,77 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.item-desc {
-  margin: 0;
-  font-size: 14px;
-  color: #909399;
-  line-height: 1.5;
-}
-
-.item-price-qty {
-  text-align: right;
-  margin-left: 20px;
+.item-meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  gap: 8px;
 }
 
-.price {
-  font-size: 20px;
-  font-weight: bold;
+.game-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  color: #667eea;
+  font-size: 12px;
+  border-radius: 10px;
+}
+
+.price-section {
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: 20px;
+}
+
+.unit-price {
+  font-size: 18px;
+  font-weight: 700;
   color: #f56c6c;
 }
 
 .quantity {
   font-size: 14px;
   color: #909399;
-}
-
-.order-summary {
-  background: #f5f7fa;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.summary-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.summary-item.total {
   text-align: right;
 }
 
-.summary-label {
-  font-size: 12px;
-  color: #909399;
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
 }
 
-.summary-value {
+.total-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.total-label {
   font-size: 14px;
-  color: #303133;
+  color: #606266;
 }
 
 .total-amount {
-  font-weight: bold;
-  color: #f56c6c;
   font-size: 20px;
+  font-weight: 700;
+  color: #f56c6c;
 }
 
-.order-actions {
+.actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
 }
 
 .action-btn {
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.3s ease;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 14px;
 }
 
 .action-btn.primary {
@@ -705,63 +766,47 @@ onMounted(() => {
 }
 
 .action-btn.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  opacity: 0.9;
 }
 
 .action-btn.success {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  background: linear-gradient(135deg, #67c23a 0%, #95d475 100%);
   border: none;
   color: white;
 }
 
 .action-btn.success:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
+  opacity: 0.9;
 }
 
 @media (max-width: 768px) {
-  .page-header {
-    padding: 20px;
+  .order-body {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .header-icon {
-    width: 48px;
-    height: 48px;
-  }
-
-  .header-text h2 {
-    font-size: 20px;
-  }
-
-  .summary-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .summary-item.total {
+  .price-section {
+    margin-left: 0;
+    margin-top: 12px;
     text-align: left;
   }
 
-  .order-body {
+  .order-footer {
     flex-direction: column;
     gap: 12px;
+    align-items: flex-start;
   }
 
-  .item-price-qty {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    margin-left: 0;
-  }
-
-  .order-actions {
-    flex-direction: column;
-  }
-
-  .action-btn {
+  .actions {
     width: 100%;
-    justify-content: center;
+    justify-content: flex-end;
   }
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 16px 0;
 }
 </style>

@@ -119,6 +119,12 @@ public class ItemController {
         return ApiResult.ok(null);
     }
 
+    @PostMapping("/listings/{listingId}/reduce")
+    public ApiResult<Void> reduceInventory(@PathVariable Long listingId, @RequestParam Integer quantity) {
+        itemQueryService.reduceInventory(listingId, quantity);
+        return ApiResult.ok(null);
+    }
+
     @ExceptionHandler(BizException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResult<Void> handleBiz(BizException e) {

@@ -163,7 +163,21 @@ public class ItemQueryService {
     public Page<ItemListing> listListingsBySeller(Long sellerId, Pageable pageable) {
         return itemListingRepository.findBySellerId(sellerId, pageable);
     }
-    
+
+    @Transactional
+    public void reduceInventory(Long listingId, Integer quantity) {
+        ItemListing listing = getListingById(listingId);
+        if (listing.getQuantity() < quantity) {
+            throw new BizException(40002, "库存不足");
+        }
+        int remaining = listing.getQuantity() - quantity;
+        if (remaining == 0) {
+            listing.setStatus(ItemListing.ListingStatus.SOLD);
+        }
+        listing.setQuantity(remaining);
+        itemListingRepository.save(listing);
+    }
+
     @Transactional
     public void cancelListing(Long listingId, Long sellerId) {
         ItemListing listing = getListingById(listingId);

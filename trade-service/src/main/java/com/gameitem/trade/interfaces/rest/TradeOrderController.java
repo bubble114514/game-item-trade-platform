@@ -53,26 +53,26 @@ public class TradeOrderController {
 
     // 支付订单
     @PostMapping("/orders/{orderId}/pay")
-    public ApiResult<TradeOrder> payOrder(@PathVariable Long orderId, @RequestParam Long buyerId) {
-        return ApiResult.ok(orderCommandService.payOrder(orderId, buyerId));
+    public ApiResult<TradeOrder> payOrder(@PathVariable Long orderId, @RequestParam Long id) {
+        return ApiResult.ok(orderCommandService.payOrder(orderId, id));
     }
 
     // 发货
     @PostMapping("/orders/{orderId}/deliver")
-    public ApiResult<TradeOrder> deliverOrder(@PathVariable Long orderId, @RequestParam Long sellerId) {
-        return ApiResult.ok(orderCommandService.deliverOrder(orderId, sellerId));
+    public ApiResult<TradeOrder> deliverOrder(@PathVariable Long orderId, @RequestParam Long id) {
+        return ApiResult.ok(orderCommandService.deliverOrder(orderId, id));
     }
 
     // 确认收货
     @PostMapping("/orders/{orderId}/complete")
-    public ApiResult<TradeOrder> completeOrder(@PathVariable Long orderId, @RequestParam Long buyerId) {
-        return ApiResult.ok(orderCommandService.completeOrder(orderId, buyerId));
+    public ApiResult<TradeOrder> completeOrder(@PathVariable Long orderId, @RequestParam Long id) {
+        return ApiResult.ok(orderCommandService.completeOrder(orderId, id));
     }
 
     // 取消订单
     @PostMapping("/orders/{orderId}/cancel")
-    public ApiResult<TradeOrder> cancelOrder(@PathVariable Long orderId, @RequestParam Long userId) {
-        return ApiResult.ok(orderCommandService.cancelOrder(orderId, userId));
+    public ApiResult<TradeOrder> cancelOrder(@PathVariable Long orderId, @RequestParam Long id) {
+        return ApiResult.ok(orderCommandService.cancelOrder(orderId, id));
     }
 
     // 查询订单
@@ -113,11 +113,13 @@ public class TradeOrderController {
     }
 
     // 请求记录
-    public record CreateFixedOrderReq(Long buyerId, Long sellerId, Long itemId, 
+    public record CreateFixedOrderReq(Long buyerId, Long sellerId, Long itemId,
                                       Integer quantity, BigDecimal unitPrice) {}
-    
+
     public record CreateFixedOrderByListingReq(Long listingId, Long buyerId, Integer quantity) {}
-    
+
     public record CreateListingOrderReq(Long buyerId, Long sellerId, Long itemId, Long listingId,
-                                        Integer quantity, BigDecimal unitPrice) {}
+                                       Integer quantity, BigDecimal unitPrice) {}
+
+    public record IdWrapper(Long id) {}
 }

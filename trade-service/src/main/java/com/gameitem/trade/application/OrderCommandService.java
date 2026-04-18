@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gameitem.common.exception.BizException;
 import com.gameitem.trade.domain.model.TradeOrder;
 import com.gameitem.trade.domain.repository.TradeOrderRepository;
+import com.gameitem.trade.interfaces.rest.ItemServiceClient;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,11 +29,15 @@ public class OrderCommandService {
 
     private final TradeOrderRepository tradeOrderRepository;
     private final RocketMQTemplate rocketMQTemplate;
+    private final ItemServiceClient itemServiceClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public OrderCommandService(TradeOrderRepository tradeOrderRepository, RocketMQTemplate rocketMQTemplate) {
+    public OrderCommandService(TradeOrderRepository tradeOrderRepository,
+                               RocketMQTemplate rocketMQTemplate,
+                               ItemServiceClient itemServiceClient) {
         this.tradeOrderRepository = tradeOrderRepository;
         this.rocketMQTemplate = rocketMQTemplate;
+        this.itemServiceClient = itemServiceClient;
     }
 
     /**
@@ -73,17 +78,27 @@ public class OrderCommandService {
      */
     @Transactional
     public TradeOrder createFixedOrderByListing(Long listingId, Long buyerId, Integer quantity) {
-        // 这里应该调用道具服务获取挂牌信息
-        // 暂时模拟数据
-        Long sellerId = 1L;
-        Long itemId = 1L;
-        BigDecimal unitPrice = BigDecimal.valueOf(120);
-        
+        ItemServiceClient.ListingApiResponse response = itemServiceClient.getListing(listingId);
+
+        if (response == null || response.getData() == null) {
+            throw new BizException(40401, "挂牌不存在");
+        }
+
+        ItemServiceClient.ItemListingDTO listing = response.getData();
+
+        Long sellerId = listing.getSellerId();
+        Long itemId = listing.getItemId();
+        BigDecimal unitPrice = listing.getPrice();
+        Integer listingQuantity = listing.getQuantity() != null ? listing.getQuantity() : 0;
+
         if (quantity == null || quantity <= 0) {
             quantity = 1;
         }
+        if (quantity > listingQuantity) {
+            throw new BizException(40002, "库存不足，当前库存: " + listingQuantity);
+        }
         BigDecimal totalAmount = unitPrice.multiply(BigDecimal.valueOf(quantity));
-        
+
         TradeOrder order = new TradeOrder();
         order.setOrderNo(generateOrderNo());
         order.setBuyerId(buyerId);
@@ -98,7 +113,8 @@ public class OrderCommandService {
 
         TradeOrder saved = tradeOrderRepository.save(order);
 
-        // 发送订单创建消息
+        itemServiceClient.reduceInventory(listingId, quantity);
+
         sendOrderEvent(saved, TAG_CREATED);
 
         return saved;
